@@ -432,7 +432,7 @@ function renderSuggestions(facts, narrative) {
       const link = href ? `<a href="${href}" target="_blank" rel="noopener noreferrer">${title}</a>` : title;
       return `<li>${link} — ${escapeHtml(item.subject)} / ${escapeHtml(item.topic)} (${escapeHtml(item.verification_status)}).</li>`;
     }).join("")
-    : "<li>No matching resources are stored for these subjects.</li>";
+    : "<li>No resources were selected for a failed or reported subject.</li>";
   return `
     ${priorityHtml}
     ${incompleteItems ? `<h3>Incomplete assessments</h3><ul>${incompleteItems}</ul>` : ""}

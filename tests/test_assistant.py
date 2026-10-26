@@ -3,19 +3,27 @@
 The model itself is not required. HTTP calls are replaced with fakes.
 """
 
+import logging
+
 import httpx
 import pytest
 
 from app.assistant import (
+    CONCERN_DRAFT_RULES,
+    DRAFT_TASK,
+    MAX_PROMPT_LENGTH,
     REQUEST_TIMEOUT_SECONDS,
     AssistantUnavailable,
     base_url,
+    build_concern_draft_facts,
     build_facts,
     build_prompt,
     clean_question,
+    clip_text,
     generate_text,
     model_name,
 )
+from app.records import select_draft_resources
 from app.schemas import FeedbackWrite, MarkWrite, QuestionWrite, ResourceWrite, StudentWrite
 from app.validation import clean_https_url
 
@@ -187,3 +195,95 @@ def test_request_models_reject_bad_input():
     assert resource.url == long_url
     with pytest.raises(Exception):
         clean_https_url("javascript:alert(1)")
+
+
+def test_concern_text_keeps_its_meaning_inside_the_field_limit():
+    description = "Core recursion request. " + ("n" * 1100)
+    kept = clip_text(description, 1000)
+    assert kept.startswith("Core recursion request.")
+    assert kept.endswith("…")
+    assert len(kept) <= 1000
+    exact = ("Core recursion request. " + ("n" * 1100))[:1000]
+    assert clip_text(exact, 1000) == exact
+
+
+def test_concern_draft_facts_are_limited_to_one_concern():
+    long_url = "https://example.edu/" + ("a" * 180) + "LONGURLTAIL"
+    description = "Recursion notes. " + ("x" * 260) + "TAILMARKER"
+    resources = [
+        {
+            "title": f"Recursion Resource {index:02d}",
+            "resource_type": "website",
+            "subject_name": "Data Structures and Algorithms",
+            "topic": "Recursion",
+            "url": long_url if index == 1 else "https://example.edu/recursion",
+            "verification_status": "unverified",
+            "description": description,
+            "email": "student@example.edu",
+        }
+        for index in range(1, 9)
+    ]
+    facts = build_concern_draft_facts(
+        student_name="Draft Target Student",
+        subject_name="Data Structures and Algorithms",
+        subject_is_active=True,
+        topic="Recursion",
+        description="Core recursion request. " + ("detail " * 200),
+        concept="Core recursion concept.",
+        assistance_requested="explanation",
+        preferred_format="examples",
+        status="submitted",
+        priority="high",
+        resources=resources,
+    )
+    assert len(facts["resources"]) == 5
+    assert facts["student_name"] == "Draft Target Student"
+    assert "email" not in facts
+    assert "student@example.edu" not in str(facts)
+    assert facts["description"].startswith("Core recursion request.")
+    assert facts["concept"] == "Core recursion concept."
+    assert facts["resources"][0]["description"].startswith("Recursion notes.")
+    assert "TAILMARKER" not in facts["resources"][0]["description"]
+    assert "url" not in facts["resources"][0]
+    assert "LONGURLTAIL" not in str(facts)
+    assert facts["resources"][0]["url_note"]
+    assert facts["resources"][1]["url"] == "https://example.edu/recursion"
+    prompt = build_prompt(DRAFT_TASK, facts, task_name="concern_draft", rules=CONCERN_DRAFT_RULES)
+    assert len(prompt) <= MAX_PROMPT_LENGTH
+    assert "rule_based_outline" not in prompt
+    assert "cat_1" not in prompt
+
+
+def test_draft_resource_selection_ignores_other_subjects_and_extra_matches():
+    catalog = [
+        {"id": index, "subject_id": 7, "title": f"Recursion Resource {index:02d}", "topic": "Recursion"}
+        for index in range(1, 9)
+    ]
+    catalog.append({"id": 20, "subject_id": 7, "title": "Graph Theory Resource", "topic": "Graph theory"})
+    catalog.append({"id": 21, "subject_id": 8, "title": "Recursion Resource Other Subject", "topic": "Recursion"})
+    selected = select_draft_resources(catalog, 7, "Recursion", "Recursion trees")
+    titles = [item["title"] for item in selected]
+    assert titles == [f"Recursion Resource {index:02d}" for index in range(1, 6)]
+    assert select_draft_resources(catalog, 7, "Queues", "Array index") == []
+
+
+def test_oversized_prompt_logs_the_task_and_length_without_student_text(caplog):
+    facts = {"description": "SECRET-STUDENT-TEXT " * 2000}
+    with caplog.at_level(logging.WARNING, logger="app.assistant"):
+        with pytest.raises(ValueError, match="The assistant request is too large"):
+            build_prompt("Draft a reply.", facts, task_name="concern_draft")
+    assert "task=concern_draft" in caplog.text
+    assert "length=" in caplog.text
+    assert "SECRET-STUDENT-TEXT" not in caplog.text
+
+
+def test_generate_text_rejects_an_oversized_prompt_before_calling_ollama(monkeypatch, caplog):
+    def boom(url, json, timeout):
+        raise AssertionError("Ollama was called")
+
+    monkeypatch.setattr(httpx, "post", boom)
+    with caplog.at_level(logging.WARNING, logger="app.assistant"):
+        with pytest.raises(ValueError, match="too large"):
+            generate_text("x" * (MAX_PROMPT_LENGTH + 1))
+    assert "task=generate_text" in caplog.text
+    assert "x" * 50 not in caplog.text

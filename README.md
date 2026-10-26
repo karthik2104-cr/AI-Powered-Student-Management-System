@@ -75,7 +75,7 @@ Ollama runs on the same computer and is not bundled with this repository. FastAP
 Three kinds of work stay separate:
 
 - **Official calculations and business rules** live in Python, mainly `app/academics.py`, `app/calculations.py`, and `app/guidance.py`. Pass, fail, incomplete, grades, and the rule-based study outline come from stored scores and reported concerns.
-- **LLM text** is used for Ask AI, academic-report explanations, revision suggestions, study-plan explanations, and administrator concern-reply drafts. The model receives a fact sheet for one student. Its reply is not saved as an official result.
+- **LLM text** is used for Ask AI, academic-report explanations, revision suggestions, study-plan explanations, and administrator concern-reply drafts. Ask AI, reports, suggestions, and study-plan explanations receive one student's fact sheet. A concern draft receives only that concern and a few matching resources. The reply is not saved as an official result or as the concern response.
 - **Records** live in PostgreSQL: students, assessments, attendance, concerns, resources, and saved study plans.
 
 If Ollama is stopped or the configured model is not installed, the rest of the portal still works. Assistant routes report that the model is unavailable.

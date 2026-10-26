@@ -459,7 +459,7 @@ def create_report(student_id: int, db: Session | None = Depends(get_db),
     """Ask the local model to summarize the calculated results."""
     database = require_db(db)
     facts = assistant_bundle(database, student_id)["facts"]
-    return assistant_answer(REPORT_TASK, facts)
+    return assistant_answer(REPORT_TASK, facts, task_name="academic_report")
 
 
 @app.post("/students/{student_id}/assistant/suggestions", response_model=AssistantAnswer)
@@ -469,7 +469,7 @@ def create_suggestions(student_id: int, db: Session | None = Depends(get_db),
     """Ask the local model for study activities based on weak or failed subjects."""
     database = require_db(db)
     facts = assistant_bundle(database, student_id)["facts"]
-    return assistant_answer(SUGGESTIONS_TASK, facts)
+    return assistant_answer(SUGGESTIONS_TASK, facts, task_name="revision_suggestions")
 
 
 @app.post("/students/{student_id}/assistant/plan", response_model=AssistantAnswer)
@@ -479,7 +479,7 @@ def create_plan(student_id: int, db: Session | None = Depends(get_db),
     """Ask the local model to explain the rule-based weekly outline."""
     database = require_db(db)
     facts = assistant_bundle(database, student_id)["facts"]
-    return assistant_answer(PLAN_TASK, facts)
+    return assistant_answer(PLAN_TASK, facts, task_name="study_plan")
 
 
 @app.post("/students/{student_id}/assistant/ask", response_model=AssistantAnswer)
@@ -489,7 +489,7 @@ def ask_about_student(student_id: int, payload: QuestionWrite, db: Session | Non
     """Answer one question from the selected student's stored facts."""
     database = require_db(db)
     facts = assistant_bundle(database, student_id)["facts"]
-    return assistant_answer(ASK_TASK, facts, payload.question)
+    return assistant_answer(ASK_TASK, facts, payload.question, task_name="ask")
 
 
 @app.get("/subjects", response_model=list[SubjectRead], summary="List subjects")

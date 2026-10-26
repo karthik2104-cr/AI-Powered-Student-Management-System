@@ -13,7 +13,14 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.academics import DEPARTMENT, SEMESTER, ordered_active_subjects
 from app.access import owns_student_or_admin, require_admin, require_student, require_user
-from app.assistant import ASK_TASK, PLAN_TASK, REPORT_TASK, SUGGESTIONS_TASK
+from app.assistant import (
+    ASK_TASK,
+    CONCERN_DRAFT_RULES,
+    DRAFT_TASK,
+    PLAN_TASK,
+    REPORT_TASK,
+    SUGGESTIONS_TASK,
+)
 from app.deps import commit_session, flush_session, get_db, require_db
 from app.models import (
     OPEN_CONCERN_STATUSES,
@@ -35,12 +42,12 @@ from app.records import (
     assistant_answer,
     assistant_bundle,
     attendance_report,
+    concern_draft_context,
     concern_payload,
     latest_study_plan,
     load_concern,
     resource_payload,
     save_study_plan,
-    stored_resources,
     require_active_subject,
     student_or_404,
     write_audit,
@@ -493,14 +500,14 @@ def save_my_study_plan(
 def my_report(user: User = Depends(require_student), db: Session | None = Depends(get_db)):
     database = require_db(db)
     facts = assistant_bundle(database, user.student_id)["facts"]
-    return assistant_answer(REPORT_TASK, facts)
+    return assistant_answer(REPORT_TASK, facts, task_name="academic_report")
 
 
 @router.post("/me/assistant/suggestions")
 def my_suggestions(user: User = Depends(require_student), db: Session | None = Depends(get_db)):
     database = require_db(db)
     facts = assistant_bundle(database, user.student_id)["facts"]
-    return assistant_answer(SUGGESTIONS_TASK, facts)
+    return assistant_answer(SUGGESTIONS_TASK, facts, task_name="revision_suggestions")
 
 
 @router.post("/me/assistant/plan")
@@ -513,14 +520,14 @@ def my_plan(
     facts = dict(assistant_bundle(database, user.student_id)["facts"])
     if payload is not None and payload.plan_text:
         facts["displayed_plan"] = payload.plan_text
-    return assistant_answer(PLAN_TASK, facts)
+    return assistant_answer(PLAN_TASK, facts, task_name="study_plan")
 
 
 @router.post("/me/assistant/ask")
 def my_question(payload: QuestionWrite, user: User = Depends(require_student), db: Session | None = Depends(get_db)):
     database = require_db(db)
     facts = assistant_bundle(database, user.student_id)["facts"]
-    return assistant_answer(ASK_TASK, facts, payload.question)
+    return assistant_answer(ASK_TASK, facts, payload.question, task_name="ask")
 
 
 @router.get("/me/concerns")
@@ -773,26 +780,12 @@ def draft_concern_reply(concern_id: int, admin: User = Depends(require_admin), d
     """Ask the local model for a draft reply. The draft is not saved as the response."""
     database = require_db(db)
     concern = load_concern(database, concern_id)
-    bundle = assistant_bundle(database, concern.student_id)
-    subject_resources = []
-    if concern.subject is not None and concern.subject.is_active:
-        subject_resources = [
-            resource for resource in stored_resources(database)
-            if resource["subject_id"] == concern.subject_id
-        ]
-    facts = bundle["facts"]
-    facts["this_concern"] = {
-        "topic": concern.topic,
-        "description": concern.description,
-        "concept": concern.concept,
-        "assistance_requested": concern.assistance_type,
-        "status": concern.status,
-    }
-    facts["resources_for_this_subject"] = subject_resources
+    facts = concern_draft_context(database, concern)
     return assistant_answer(
-        "Draft a short reply an administrator could edit. Recommend only resources listed in the facts. "
-        "Do not invent titles or URLs. Do not change the official marks.",
+        DRAFT_TASK,
         facts,
+        task_name="concern_draft",
+        rules=CONCERN_DRAFT_RULES,
     )
 
 

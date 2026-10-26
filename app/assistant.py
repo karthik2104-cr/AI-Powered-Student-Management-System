@@ -5,14 +5,23 @@ receive a database password, and its reply is not stored as an official result.
 """
 
 import json
+import logging
 import os
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "qwen2.5:3b"
 DEFAULT_BASE_URL = "http://localhost:11434"
 MAX_QUESTION_LENGTH = 1000
 MAX_PROMPT_LENGTH = 12000
+MAX_CONCERN_TOPIC = 120
+MAX_CONCERN_DESCRIPTION = 1000
+MAX_CONCERN_CONCEPT = 300
+MAX_DRAFT_RESOURCES = 5
+MAX_RESOURCE_DESCRIPTION = 240
+MAX_RESOURCE_URL = 200
 REQUEST_TIMEOUT_SECONDS = 180
 
 REPORT_TASK = (
@@ -50,9 +59,26 @@ Do not claim anything about the student's ability, effort, motivation, or person
 Student feedback is what the student reported. It is not a verified academic fact.
 A guidance label is not an official pass or fail.
 If a fact is missing, say that it is not available.
-Recommend a stored resource only for the subject it belongs to.
+Recommend a stored resource only for the subject it belongs to. An empty stored_resources list means none were selected for a failed or reported subject.
 Do not say a plan or resource was saved unless the facts say it is saved.
 Keep the answer concise and practical.
+""".strip()
+
+DRAFT_TASK = (
+    "Draft a reply to this one concern for an administrator to edit. "
+    "Address the subject, concept, and requested assistance. "
+    "Mention a resource only when it is listed."
+)
+
+CONCERN_DRAFT_RULES = """
+You are drafting one reply that an administrator will review before saving it.
+Use only the JSON facts below. They describe one concern.
+Write about that subject, concept, and requested assistance.
+Recommend a resource only when its title is listed. Use its URL only when a URL is listed.
+Do not invent titles, URLs, marks, attendance, grades, or other concerns.
+Do not change the concern status, and do not say that the reply was saved or sent.
+If a detail is missing, say that it is not available.
+Keep the reply short enough to edit.
 """.strip()
 
 
@@ -74,6 +100,45 @@ def base_url() -> str:
     """Return the local Ollama address without a trailing slash."""
     configured = os.getenv("OLLAMA_BASE_URL", DEFAULT_BASE_URL).strip()
     return (configured or DEFAULT_BASE_URL).rstrip("/")
+
+
+def clip_text(value: object, limit: int) -> str:
+    """Keep the start of a free-text field inside a fixed character budget.
+
+    The start is the part that carries the subject, concept, or request.
+    A value that already fits is returned unchanged apart from trimmed space.
+    """
+    text = " ".join(str(value or "").split())
+    if limit < 1:
+        return ""
+    if len(text) <= limit:
+        return text
+    if limit == 1:
+        return text[:1]
+    return text[: limit - 1].rstrip() + "…"
+
+
+def _log_oversized_prompt(task_name: str, length: int) -> None:
+    """Record the task and length. The prompt and student text stay out of the log."""
+    logger.warning(
+        "Assistant prompt rejected. task=%s length=%s limit=%s",
+        task_name,
+        length,
+        MAX_PROMPT_LENGTH,
+    )
+
+
+def _oversized_message(task_name: str) -> str:
+    if task_name == "concern_draft":
+        return (
+            "The assistant request is too large. "
+            "Shorten this concern's description or concept, then try the draft again. "
+            "The concern was not changed."
+        )
+    return (
+        "The assistant request is too large. "
+        "Shorten the question or the text being explained, then try again."
+    )
 
 
 def clean_question(question: str) -> str:
@@ -183,15 +248,71 @@ def build_facts(
     return facts
 
 
-def build_prompt(task: str, facts: dict, question: str | None = None) -> str:
-    """Combine the fixed rules, one task, and the limited facts."""
+def build_concern_draft_facts(
+    *,
+    student_name: str,
+    subject_name: str,
+    subject_is_active: bool,
+    topic: str,
+    description: str,
+    concept: str,
+    assistance_requested: str,
+    preferred_format: str,
+    status: str,
+    priority: str,
+    resources: list[dict],
+) -> dict:
+    """Facts for one concern reply. Other academic history is not included."""
+    compact_resources = []
+    for resource in resources[:MAX_DRAFT_RESOURCES]:
+        url = str(resource.get("url") or "")
+        item = {
+            "title": clip_text(resource.get("title"), 200),
+            "type": clip_text(resource.get("resource_type") or resource.get("type"), 20),
+            "subject": clip_text(resource.get("subject_name") or resource.get("subject"), 120),
+            "topic": clip_text(resource.get("topic"), MAX_CONCERN_TOPIC),
+            "verification_status": clip_text(resource.get("verification_status"), 20),
+            "description": clip_text(resource.get("description"), MAX_RESOURCE_DESCRIPTION),
+        }
+        if url and len(url) <= MAX_RESOURCE_URL:
+            item["url"] = url
+        elif url:
+            item["url_note"] = "The stored URL is too long to include in the draft."
+        compact_resources.append(item)
+    return {
+        "student_name": clip_text(student_name, 120),
+        "subject": clip_text(subject_name, 120),
+        "subject_is_active": bool(subject_is_active),
+        "topic": clip_text(topic, MAX_CONCERN_TOPIC),
+        "description": clip_text(description, MAX_CONCERN_DESCRIPTION),
+        "concept": clip_text(concept, MAX_CONCERN_CONCEPT),
+        "assistance_requested": clip_text(assistance_requested, 40),
+        "preferred_format": clip_text(preferred_format, 20),
+        "status": clip_text(status, 40),
+        "priority": clip_text(priority, 20),
+        "resources": compact_resources,
+    }
+
+
+def build_prompt(
+    task: str,
+    facts: dict,
+    question: str | None = None,
+    *,
+    task_name: str | None = None,
+    rules: str | None = None,
+) -> str:
+    """Combine the rules, one task, and the limited facts."""
+    chosen_rules = RULES if rules is None else rules.strip()
     facts_json = json.dumps(facts, indent=2, default=str)
     question_text = ""
     if question:
         question_text = "\n\nQuestion:\n" + clean_question(question)
-    prompt = f"{RULES}\n\nTask:\n{task.strip()}{question_text}\n\nFacts:\n{facts_json}"
+    prompt = f"{chosen_rules}\n\nTask:\n{task.strip()}{question_text}\n\nFacts:\n{facts_json}"
     if len(prompt) > MAX_PROMPT_LENGTH:
-        raise ValueError("The assistant request is too large.")
+        label = task_name or "assistant"
+        _log_oversized_prompt(label, len(prompt))
+        raise ValueError(_oversized_message(label))
     return prompt
 
 
@@ -216,7 +337,8 @@ def assistant_status() -> dict:
 def generate_text(prompt: str) -> str:
     """Send one prompt to Ollama and return the text it produced."""
     if len(prompt) > MAX_PROMPT_LENGTH:
-        raise ValueError("The assistant request is too large.")
+        _log_oversized_prompt("generate_text", len(prompt))
+        raise ValueError(_oversized_message("generate_text"))
     try:
         response = httpx.post(
             f"{base_url()}/api/generate",

@@ -12,7 +12,15 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.academics import DEPARTMENT, SEMESTER, academic_report, ordered_active_subjects
-from app.assistant import AssistantUnavailable, build_facts, build_prompt, generate_text, model_name
+from app.assistant import (
+    MAX_DRAFT_RESOURCES,
+    AssistantUnavailable,
+    build_concern_draft_facts,
+    build_facts,
+    build_prompt,
+    generate_text,
+    model_name,
+)
 from app.calculations import aggregate_percentage, attendance_percentage
 from app.guidance import build_study_outline, select_resources
 from app.models import (
@@ -177,6 +185,62 @@ def _assistant_resources(
     return selected
 
 
+def _draft_tokens(value: str) -> set[str]:
+    """Words long enough to match a resource topic without matching every short word."""
+    return {token for token in value.casefold().replace("-", " ").split() if len(token) >= 4}
+
+
+def draft_resource_is_relevant(resource: dict, topic: str, concept: str) -> bool:
+    """A resource is relevant when its title or topic shares a word with this concern."""
+    haystack = f"{resource.get('topic') or ''} {resource.get('title') or ''}"
+    needles = _draft_tokens(topic) | _draft_tokens(concept)
+    if not needles:
+        return False
+    hay_tokens = _draft_tokens(haystack)
+    if needles & hay_tokens:
+        return True
+    folded = haystack.casefold()
+    return any(needle in folded for needle in needles)
+
+
+def select_draft_resources(catalog: list[dict], subject_id: int, topic: str, concept: str) -> list[dict]:
+    """Return a bounded set of resources for this concern's subject and topic."""
+    matches = [
+        resource
+        for resource in catalog
+        if resource.get("subject_id") == subject_id and draft_resource_is_relevant(resource, topic, concept)
+    ]
+    matches.sort(key=lambda resource: (resource.get("title") or "", resource.get("id") or 0))
+    return matches[:MAX_DRAFT_RESOURCES]
+
+
+def concern_draft_context(db: Session, concern: Concern) -> dict:
+    """Load one concern and the few resources needed to draft its reply.
+
+    Passwords, email, assessment history, attendance, and other concerns stay out.
+    """
+    subject = concern.subject
+    student = concern.student
+    return build_concern_draft_facts(
+        student_name="" if student is None else student.full_name,
+        subject_name="Unknown subject" if subject is None else subject.name,
+        subject_is_active=False if subject is None else bool(subject.is_active),
+        topic=concern.topic,
+        description=concern.description,
+        concept=concern.concept,
+        assistance_requested=concern.assistance_type,
+        preferred_format=concern.preferred_format,
+        status=concern.status,
+        priority=concern.priority,
+        resources=select_draft_resources(
+            stored_resources(db),
+            concern.subject_id,
+            concern.topic,
+            concern.concept,
+        ),
+    )
+
+
 def assistant_bundle(db: Session, student_id: int) -> dict:
     """Load one student and the small set of facts the model is allowed to see."""
     student = student_or_404(db, student_id)
@@ -195,7 +259,8 @@ def assistant_bundle(db: Session, student_id: int) -> dict:
         if concern.subject_id in active_ids
     ]
     feedback = feedback + concern_rows_as_feedback(list(concerns))
-    resources = _assistant_resources(stored_resources(db), official, concerns, active_ids)
+    catalog = stored_resources(db)
+    resources = _assistant_resources(catalog, official, concerns, active_ids)
     outline = build_study_outline(official, feedback)
     aggregate = aggregate_percentage(results)
     attendance = attendance_report(db, student_id)
@@ -251,10 +316,17 @@ def assistant_bundle(db: Session, student_id: int) -> dict:
     }
 
 
-def assistant_answer(task: str, facts: dict, question: str | None = None) -> dict:
+def assistant_answer(
+    task: str,
+    facts: dict,
+    question: str | None = None,
+    *,
+    task_name: str | None = None,
+    rules: str | None = None,
+) -> dict:
     """Ask Ollama to explain facts. Failure here does not change stored marks."""
     try:
-        prompt = build_prompt(task, facts, question)
+        prompt = build_prompt(task, facts, question, task_name=task_name, rules=rules)
         narrative = generate_text(prompt)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
