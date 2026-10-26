@@ -1,0 +1,227 @@
+:root {
+  color-scheme: light;
+  --ink: #1c2834;
+  --muted: #5d6b7a;
+  --line: #d7dee6;
+  --paper: #f5f7fa;
+  --card: #ffffff;
+  --accent: #1f4b73;
+  --accent-2: #2f6f4e;
+  --danger: #8d2f2f;
+  --focus: #0b6bcb;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.45;
+}
+
+a { color: var(--accent); }
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button, .button-link {
+  background: var(--accent);
+  color: white;
+  border: 0;
+  border-radius: 6px;
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+button.secondary, a.secondary { background: #4d5d6d; color: white; }
+button.danger { background: var(--danger); }
+button:disabled { opacity: 0.6; cursor: wait; }
+
+input, select, textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  background: white;
+}
+
+textarea { min-height: 5rem; resize: vertical; }
+#plan-text { min-height: 12rem; }
+.result-block { margin: 0.6rem 0 1.2rem; }
+.result-block h3 { margin-top: 1rem; }
+.result-block p, .result-block li { line-height: 1.45; }
+.result-block ul { margin: 0.3rem 0 0.6rem 1.2rem; padding: 0; }
+
+label { display: block; margin: 0.8rem 0 0.25rem; font-size: 0.92rem; }
+
+.topbar, .portal-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: white;
+  border-bottom: 1px solid var(--line);
+}
+
+.portal-nav { flex-wrap: wrap; align-items: flex-start; }
+
+.nav-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.nav-buttons button { background: #e7eef5; color: var(--ink); }
+.nav-buttons button.active { background: var(--accent); color: white; }
+
+h1, h2, h3 { margin: 0 0 0.4rem; line-height: 1.2; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.15rem; }
+
+.eyebrow, .hint, .status-pill { color: var(--muted); }
+.hint { margin-top: 0; }
+
+.page { padding: 1rem 1.25rem 2rem; max-width: 1100px; margin: 0 auto; }
+
+.auth-layout {
+  max-width: 920px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.auth-layout.single {
+  max-width: 520px;
+  grid-template-columns: 1fr;
+}
+
+.landing {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+}
+
+.hero {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.plain-list { margin: 0.4rem 0 1rem; padding-left: 1.1rem; }
+.admin-entry { margin-top: 1.2rem; font-size: 0.9rem; }
+.account-menu { position: relative; margin-left: auto; }
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.7rem;
+  min-width: 220px;
+  z-index: 5;
+}
+.menu-panel button { display: block; width: 100%; margin-top: 0.4rem; }
+dialog {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  max-width: 420px;
+  width: calc(100% - 2rem);
+}
+dialog::backdrop { background: rgba(28, 40, 52, 0.35); }
+.video-frame { width: 100%; max-width: 640px; aspect-ratio: 16 / 9; border: 0; background: #111; }
+
+.badge {
+  display: inline-block;
+  min-width: 1.2rem;
+  margin-left: 0.25rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--danger);
+  color: white;
+  font-size: 0.75rem;
+}
+.table-wrap { overflow-x: auto; }
+
+.card, .auth-card, .stats article {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+.stats strong { display: block; font-size: 1.4rem; }
+.stats span { color: var(--muted); font-size: 0.85rem; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.message { min-height: 1.2rem; color: var(--danger); }
+.message.ok { color: var(--accent-2); }
+
+table { width: 100%; border-collapse: collapse; background: white; }
+th, td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.85rem; color: var(--muted); }
+
+.chip {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  background: #e7eef5;
+  font-size: 0.82rem;
+}
+
+.chip.pass, .chip.strong, .chip.present, .chip.resolved { background: #e5f4ea; }
+.chip.fail, .chip.needs_attention, .chip.absent, .chip.high { background: #fde8e8; }
+.chip.not_assessed, .chip.developing, .chip.submitted, .chip.demo { background: #fff4d6; }
+
+.list { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.list li, .concern { border-top: 1px solid var(--line); padding: 0.7rem 0; }
+.button-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.8rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.section-gap { margin-top: 1.6rem; }
+.task-card { margin: 1rem 0; }
+.task-card h3 { font-size: 1.05rem; }
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.action-grid button {
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.9rem;
+  text-align: left;
+  min-height: 5.5rem;
+}
+.action-grid button strong { display: block; color: var(--accent); }
+.action-grid button span { display: block; color: var(--muted); font-size: 0.88rem; font-weight: 400; margin-top: 0.3rem; }
+.example-questions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0; }
+.example-questions button { background: #e7eef5; color: var(--ink); text-align: left; }
+.exchange { margin-top: 0.8rem; }
+.exchange h3 { font-size: 1rem; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+@media (max-width: 800px) {
+  .auth-layout, .landing, .grid-2, .topbar, .action-grid { grid-template-columns: 1fr; display: block; }
+  .action-grid { display: grid; grid-template-columns: 1fr; }
+  .nav-buttons button { min-height: 2.6rem; }
+  .topbar > * + * { margin-top: 0.6rem; }
+  table { display: block; overflow-x: auto; }
+  .account-menu { width: 100%; margin-left: 0; }
+  .menu-panel { position: static; min-width: 0; margin-top: 0.4rem; }
+}

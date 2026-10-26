@@ -1,0 +1,11 @@
+fastapi==0.162.0
+uvicorn==0.54.0
+sqlalchemy==2.1.6
+psycopg==3.3.6
+# Windows build of libpq. psycopg cannot connect without it when PostgreSQL's bin folder is not on PATH.
+psycopg-binary==3.3.6
+python-dotenv==1.2.4
+pytest==9.1.1
+# FastAPI's TestClient uses httpx to call the application during tests.
+httpx==0.28.1
+bcrypt==5.0.0

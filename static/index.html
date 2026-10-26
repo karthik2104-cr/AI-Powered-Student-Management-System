@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Management System</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Local academic workspace</p>
+      <h1>Student Management System</h1>
+    </div>
+    <p id="health-status" class="status-pill">Checking services…</p>
+  </header>
+
+  <main class="page">
+    <section class="stats" id="stats" aria-label="Dashboard statistics"></section>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>Students</h2>
+        <label for="student-search">Search</label>
+        <input id="student-search" type="search" placeholder="Name, admission number, or email">
+        <ul id="student-list" class="student-list"></ul>
+
+        <h3 id="student-form-title">Add student</h3>
+        <form id="student-form">
+          <input type="hidden" id="student-id">
+          <label for="admission-number">Admission number</label>
+          <input id="admission-number" required maxlength="30">
+          <label for="full-name">Full name</label>
+          <input id="full-name" required maxlength="120">
+          <label for="email">Email</label>
+          <input id="email" type="email" required maxlength="254">
+          <div class="button-row">
+            <button type="submit">Save student</button>
+            <button type="button" id="cancel-edit" hidden>Cancel</button>
+            <button type="button" id="delete-student" class="danger" hidden>Delete</button>
+          </div>
+          <p id="student-message" class="message"></p>
+        </form>
+      </section>
+
+      <section class="panel" id="student-detail">
+        <h2 id="detail-title">Select a student</h2>
+        <p class="hint">This older page is not a portal route. Official results are in the student and admin portals.</p>
+
+        <h3>Academic results</h3>
+        <div id="results-table"></div>
+
+        <details>
+          <summary>Add a mark</summary>
+          <p class="hint">This page cannot save marks. CAT, assignment, and external scores are entered in the administrator portal.</p>
+          <form id="mark-form">
+            <fieldset disabled>
+              <label for="mark-subject">Subject</label>
+              <select id="mark-subject"></select>
+              <label for="mark-examination">Examination</label>
+              <select id="mark-examination"></select>
+              <label for="marks-obtained">Marks obtained</label>
+              <input id="marks-obtained" type="number" min="0" step="0.01">
+              <label for="maximum-marks">Maximum marks</label>
+              <input id="maximum-marks" type="number" min="0.01" step="0.01">
+              <label for="pass-marks">Pass mark, if the school set one</label>
+              <input id="pass-marks" type="number" min="0" step="0.01">
+              <button type="submit">Save mark</button>
+            </fieldset>
+          </form>
+        </details>
+
+        <h3>Student feedback</h3>
+        <p class="hint">This is what the student reports. It does not change the official result.</p>
+        <form id="feedback-form">
+          <label for="feedback-subject">Subject</label>
+          <select id="feedback-subject"></select>
+          <label for="feedback-topic">Topic</label>
+          <input id="feedback-topic" maxlength="120">
+          <label for="difficult-topics">What is difficult?</label>
+          <textarea id="difficult-topics" maxlength="500"></textarea>
+          <label for="explanation-request">What should be explained differently?</label>
+          <textarea id="explanation-request" maxlength="500"></textarea>
+          <label for="practice-request">What needs more practice?</label>
+          <textarea id="practice-request" maxlength="500"></textarea>
+          <label for="preferred-format">Preferred format</label>
+          <select id="preferred-format">
+            <option value="videos">Videos</option>
+            <option value="books">Books</option>
+            <option value="examples">Examples</option>
+            <option value="exercises">Exercises</option>
+          </select>
+          <label for="resource-note">Resource comment</label>
+          <textarea id="resource-note" maxlength="500"></textarea>
+          <label for="resource-rating">Resource rating</label>
+          <select id="resource-rating">
+            <option value="">Not rated</option>
+            <option value="useful">Useful</option>
+            <option value="unhelpful">Unhelpful</option>
+          </select>
+          <button type="submit">Save feedback</button>
+        </form>
+        <ul id="feedback-list" class="plain-list"></ul>
+
+        <h3>Learning resources</h3>
+        <ul id="resource-list" class="plain-list"></ul>
+
+        <h3>Study outline</h3>
+        <p class="hint">Built from calculated results and feedback. You can edit this text in the browser. Refreshing the page restores the generated outline.</p>
+        <textarea id="study-plan" rows="8"></textarea>
+
+        <h3>Local assistant</h3>
+        <p class="hint">The model explains the facts above. Its text is not saved as an official result.</p>
+        <div class="button-row">
+          <button type="button" id="ai-report">Academic report</button>
+          <button type="button" id="ai-suggestions">Improvement suggestions</button>
+          <button type="button" id="ai-plan">Explain study plan</button>
+        </div>
+        <label for="question-input">Ask about this student's records</label>
+        <textarea id="question-input" maxlength="1000" placeholder="Which subjects need the most improvement?"></textarea>
+        <button type="button" id="ai-ask">Ask</button>
+        <article id="ai-output" class="ai-output"></article>
+      </section>
+    </div>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Management System</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">College portal</p>
+      <strong>Student Management System</strong>
+    </div>
+    <nav class="nav-buttons" aria-label="Public pages">
+      <a class="button-link" href="/login">Student login</a>
+      <a class="button-link secondary" href="/register">Create student account</a>
+    </nav>
+  </header>
+  <main class="landing">
+    <section class="hero">
+      <p class="eyebrow">Welcome</p>
+      <h1>Student Management System</h1>
+      <p>A college portal for student records, attendance, concerns, and study guidance. Official results are calculated from stored marks. Sign in with a student account, or create one if you are new.</p>
+      <div class="button-row">
+        <a class="button-link" href="/login">Student login</a>
+        <a class="button-link secondary" href="/register">Create student account</a>
+      </div>
+      <p class="hint">Already registered? Use the email and password from your student account.</p>
+    </section>
+    <section class="card">
+      <h2>What you can do</h2>
+      <ul class="plain-list">
+        <li>Students review their own results, attendance, and concerns.</li>
+        <li>New students create an account, then sign in on a separate page.</li>
+        <li>The academic office reviews registrations after students create accounts.</li>
+      </ul>
+      <p id="service-status" class="status-pill">Checking services…</p>
+      <p class="admin-entry"><a href="/admin/login">Admin login</a></p>
+    </section>
+  </main>
+  <script src="/static/auth.js"></script>
+</body>
+</html>

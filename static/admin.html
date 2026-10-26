@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin portal · Student Management System</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="portal-nav">
+    <div>
+      <p class="eyebrow">Admin portal</p>
+      <h1>Academic office</h1>
+    </div>
+    <div class="nav-buttons" id="admin-nav">
+      <button type="button" data-panel="dashboard" class="active">Dashboard</button>
+      <button type="button" data-panel="notices">Notifications <span id="notice-count" class="badge">0</span></button>
+      <button type="button" data-panel="registrations">Registrations</button>
+      <button type="button" data-panel="students">Students</button>
+      <button type="button" data-panel="academics">Subjects and exams</button>
+      <button type="button" data-panel="marks">Marks</button>
+      <button type="button" data-panel="attendance">Attendance</button>
+      <button type="button" data-panel="concerns">Concerns</button>
+      <button type="button" data-panel="resources">Resources</button>
+      <button type="button" data-panel="audit">Audit</button>
+    </div>
+    <div class="account-menu">
+      <button type="button" id="account-menu-button" aria-haspopup="true" aria-expanded="false">Account</button>
+      <div id="account-menu" class="menu-panel" hidden>
+        <p id="account-label" class="hint"></p>
+        <button type="button" id="open-password">Change password</button>
+        <button type="button" id="logout">Log out</button>
+      </div>
+    </div>
+  </header>
+  <main class="page">
+    <p id="page-message" class="message"></p>
+    <section id="dashboard" class="panel active">
+      <div class="stats" id="stats"></div>
+      <p id="demo-indicator" class="hint">Counts come from PostgreSQL.</p>
+      <button type="button" id="load-demo">Load demo data</button>
+      <h2>Recent registrations</h2>
+      <div id="recent-registrations"></div>
+      <h2>Subjects reported as difficult</h2>
+      <div id="difficult-subjects"></div>
+    </section>
+    <section id="notices" class="panel">
+      <h2>Registration notifications</h2>
+      <p class="hint">Each new student account creates one notice. Passwords are not included.</p>
+      <div id="notice-list"></div>
+    </section>
+    <section id="registrations" class="panel">
+      <h2>Registered students</h2>
+      <form id="registration-filter" class="grid-2">
+        <div>
+          <label for="registration-search">Search</label>
+          <input id="registration-search" type="search" placeholder="Name, email, or admission number">
+        </div>
+        <div>
+          <label for="registration-department">Department</label>
+          <input id="registration-department" maxlength="120">
+        </div>
+        <div>
+          <label for="registration-active">Account status</label>
+          <select id="registration-active">
+            <option value="">All</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+        <div class="button-row"><button type="submit">Search</button></div>
+      </form>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Admission number</th>
+              <th>Department</th>
+              <th>Registered</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="registration-rows"></tbody>
+        </table>
+      </div>
+      <div class="button-row">
+        <button type="button" id="registration-prev" class="secondary">Previous</button>
+        <span id="registration-page" class="hint"></span>
+        <button type="button" id="registration-next" class="secondary">Next</button>
+      </div>
+      <h3>Selected student</h3>
+      <div id="registration-detail"></div>
+    </section>
+    <section id="students" class="panel">
+      <h2>Students</h2>
+      <label for="student-search">Search</label>
+      <input id="student-search" type="search" placeholder="Name, admission number, or email">
+      <ul id="student-list" class="list"></ul>
+      <h3 id="student-form-title">Add student</h3>
+      <form id="student-form">
+        <input type="hidden" id="student-id">
+        <label for="admission-number">Admission number</label>
+        <input id="admission-number" required maxlength="30">
+        <label for="full-name">Full name</label>
+        <input id="full-name" required maxlength="120">
+        <label for="email">Email</label>
+        <input id="email" type="email" required>
+        <label for="department">Department</label>
+        <input id="department" maxlength="120" value="Computer Science" readonly>
+        <label for="year">Semester</label>
+        <input id="year" maxlength="40" value="Semester 1" readonly>
+        <label><input id="is-active" type="checkbox" checked style="width:auto"> Active</label>
+        <div class="button-row">
+          <button type="submit">Save student</button>
+          <button type="button" id="reset-access" class="secondary">Set password</button>
+          <button type="button" id="save-study-plan" class="secondary">Save study outline</button>
+          <button type="button" id="deactivate-student" class="danger">Deactivate</button>
+        </div>
+      <div id="study-plan-view"></div>
+      </form>
+      <h3>Results for the selected student</h3>
+      <div id="selected-results"></div>
+    </section>
+    <section id="academics" class="panel">
+      <div class="grid-2">
+        <form id="subject-form">
+          <h2>Subjects</h2>
+          <p class="hint">Add or edit a subject. Deactivate a subject that already has records. Delete is only available when nothing refers to it.</p>
+          <input type="hidden" id="subject-id">
+          <label for="subject-code">Code</label>
+          <input id="subject-code" required maxlength="20">
+          <label for="subject-name">Name</label>
+          <input id="subject-name" required maxlength="120">
+          <label><input id="subject-active" type="checkbox" checked style="width:auto"> Active</label>
+          <div class="button-row"><button type="submit">Save subject</button></div>
+        </form>
+        <form id="exam-form">
+          <h2>Examination types</h2>
+          <p class="hint">Only FAT, Assignment, and End Semester Examination are permitted. CAT scores, assignment scores, and the external mark are saved in the assessment form. They are not stored again here.</p>
+          <input type="hidden" id="exam-id">
+          <label for="exam-type">Type</label>
+          <select id="exam-type">
+            <option value="fat">FAT</option>
+            <option value="assignment">Assignment</option>
+            <option value="end_semester">End Semester Examination</option>
+          </select>
+          <p id="exam-label" class="hint">FAT is the formative assessment. The three CAT scores stay in the internal assessment.</p>
+          <label for="exam-date">Date, if one has been set</label>
+          <input id="exam-date" type="date">
+          <div class="button-row"><button type="submit">Save examination type</button></div>
+        </form>
+      </div>
+      <div id="academic-lists"></div>
+    </section>
+    <section id="marks" class="panel">
+      <h2>Internal assessment and external examination</h2>
+      <p class="hint">Enter whole numbers only. Leave a box blank when that score has not been recorded. Blank is not zero. CAT and assignment scores are out of 50. The external raw mark is out of 100.</p>
+      <form id="assessment-form">
+        <label for="assessment-student">Student</label>
+        <select id="assessment-student" required></select>
+        <label for="assessment-subject">Subject</label>
+        <select id="assessment-subject" required></select>
+        <div class="grid-2">
+          <div>
+            <label for="cat-1">CAT 1 /50</label>
+            <input id="cat-1" type="number" min="0" max="50" step="1">
+          </div>
+          <div>
+            <label for="assignment-1">Assignment 1 /50</label>
+            <input id="assignment-1" type="number" min="0" max="50" step="1">
+          </div>
+          <div>
+            <label for="cat-2">CAT 2 /50</label>
+            <input id="cat-2" type="number" min="0" max="50" step="1">
+          </div>
+          <div>
+            <label for="assignment-2">Assignment 2 /50</label>
+            <input id="assignment-2" type="number" min="0" max="50" step="1">
+          </div>
+          <div>
+            <label for="cat-3">CAT 3 /50</label>
+            <input id="cat-3" type="number" min="0" max="50" step="1">
+          </div>
+          <div>
+            <label for="assignment-3">Assignment 3 /50</label>
+            <input id="assignment-3" type="number" min="0" max="50" step="1">
+          </div>
+        </div>
+        <label for="external-raw">External raw mark /100</label>
+        <input id="external-raw" type="number" min="0" max="100" step="1">
+        <div class="button-row"><button type="submit">Save assessment</button></div>
+      </form>
+      <div id="assessment-tables"></div>
+      <h2 class="section-gap">Earlier examination record</h2>
+      <p class="hint">These rows are the older examination scores. The official Semester 1 grade is calculated from the assessment above.</p>
+      <form id="mark-form">
+        <label for="mark-student">Student</label>
+        <select id="mark-student" required></select>
+        <label for="mark-subject">Subject</label>
+        <select id="mark-subject" required></select>
+        <label for="mark-exam">Exam</label>
+        <select id="mark-exam" required></select>
+        <label for="marks-obtained">Marks obtained</label>
+        <input id="marks-obtained" type="number" min="0" step="0.01" required>
+        <label for="maximum-marks">Maximum marks</label>
+        <input id="maximum-marks" type="number" min="0.01" step="0.01" required>
+        <label for="pass-marks">Pass mark, if one is set</label>
+        <input id="pass-marks" type="number" min="0" step="0.01">
+        <input type="hidden" id="mark-id">
+        <div class="button-row">
+          <button type="submit">Save mark</button>
+          <button type="button" id="mark-clear" class="secondary">Clear</button>
+        </div>
+      </form>
+      <h3>Stored marks for the selected student</h3>
+      <div id="mark-list"><p>Choose a student to load marks from PostgreSQL.</p></div>
+    </section>
+    <section id="attendance" class="panel">
+      <h2>Record attendance</h2>
+      <form id="attendance-form">
+        <label for="attendance-student">Student</label>
+        <select id="attendance-student" required></select>
+        <label for="attendance-subject">Subject</label>
+        <select id="attendance-subject" required></select>
+        <label for="attendance-date">Session date</label>
+        <input id="attendance-date" type="date" required>
+        <label for="attendance-status">Status</label>
+        <select id="attendance-status">
+          <option value="present">Present</option>
+          <option value="absent">Absent</option>
+        </select>
+        <div class="button-row"><button type="submit">Save attendance</button></div>
+      </form>
+      <div id="attendance-view"><p>Choose a student to load attendance from PostgreSQL.</p></div>
+    </section>
+    <section id="concerns" class="panel">
+      <h2>Concerns</h2>
+      <div class="grid-2">
+        <label>Status <select id="filter-status"><option value="">Any</option><option>submitted</option><option>under_review</option><option>resources_recommended</option><option>in_progress</option><option>resolved</option><option>closed</option></select></label>
+        <label>Priority <select id="filter-priority"><option value="">Any</option><option>low</option><option>normal</option><option>high</option></select></label>
+        <label>Subject <select id="filter-subject"><option value="">Any</option></select></label>
+        <label>From <input id="filter-from" type="date"></label>
+        <label>To <input id="filter-to" type="date"></label>
+      </div>
+      <button type="button" id="refresh-concerns">Refresh</button>
+      <div id="concern-admin-list"></div>
+    </section>
+    <section id="resources" class="panel">
+      <h2>Add a resource</h2>
+      <p class="hint">Leave a resource unverified unless you have checked the link yourself.</p>
+      <form id="resource-form">
+        <label for="resource-title">Title</label>
+        <input id="resource-title" required maxlength="200">
+        <label for="resource-type">Type</label>
+        <select id="resource-type"><option value="book">Book</option><option value="website">Website</option><option value="course">Course</option><option value="video">Video</option></select>
+        <label for="resource-author">Publisher or channel</label>
+        <input id="resource-author" maxlength="200">
+        <label for="resource-subject">Subject</label>
+        <select id="resource-subject" required></select>
+        <label for="resource-topic">Topic</label>
+        <input id="resource-topic" required maxlength="120">
+        <label for="resource-url">URL</label>
+        <input id="resource-url" type="url" required>
+        <label for="resource-description">Description</label>
+        <textarea id="resource-description" required maxlength="500"></textarea>
+        <label for="resource-verification">Verification status</label>
+        <select id="resource-verification"><option value="unverified">Unverified</option><option value="verified">Verified</option></select>
+        <label for="resource-checked">Date last checked</label>
+        <input id="resource-checked" type="date">
+        <p class="hint">A video URL must start with http:// or https://. Mark it verified only after you have opened the link.</p>
+        <div class="button-row"><button type="submit">Save resource</button></div>
+      </form>
+      <div id="resource-admin-list"></div>
+    </section>
+    <section id="audit" class="panel">
+      <h2>Recent administrative changes</h2>
+      <div id="audit-list"></div>
+    </section>
+  </main>
+  <dialog id="password-dialog">
+    <form id="password-form">
+      <h2>Change password</h2>
+      <p id="password-required-note" class="hint" hidden>Change the initial administrator password before continuing.</p>
+      <label for="current-password">Current password</label>
+      <input id="current-password" type="password" autocomplete="current-password" required>
+      <label for="new-password">New password</label>
+      <input id="new-password" type="password" minlength="8" autocomplete="new-password" required>
+      <label for="confirm-password">Confirm new password</label>
+      <input id="confirm-password" type="password" minlength="8" autocomplete="new-password" required>
+      <p id="password-message" class="message" role="status"></p>
+      <div class="button-row">
+        <button type="submit">Update password</button>
+        <button type="button" id="close-password" class="secondary">Close</button>
+      </div>
+    </form>
+  </dialog>
+  <script src="/static/auth.js"></script>
+  <script src="/static/admin.js"></script>
+</body>
+</html>

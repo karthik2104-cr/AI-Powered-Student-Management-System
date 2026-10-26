@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student portal · Student Management System</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="portal-nav">
+    <div>
+      <p class="eyebrow">Student portal</p>
+      <h1 id="student-name">My studies</h1>
+    </div>
+    <nav class="nav-buttons" id="student-nav" aria-label="Student sections">
+      <button type="button" data-panel="overview" class="active" aria-current="true">Overview</button>
+      <button type="button" data-panel="results">My Results</button>
+      <button type="button" data-panel="attendance">My Attendance</button>
+      <button type="button" data-panel="concerns">My Concerns</button>
+      <button type="button" data-panel="resources">Learning Resources</button>
+      <button type="button" data-panel="plan">Study Plan</button>
+      <button type="button" data-panel="suggestions">Revision</button>
+      <button type="button" data-panel="ask">Ask AI</button>
+      <button type="button" data-panel="profile">Profile</button>
+      <button type="button" id="logout">Log out</button>
+    </nav>
+  </header>
+  <main class="page">
+    <p id="page-message" class="message"></p>
+    <section id="overview" class="panel active">
+      <h2>Where to start</h2>
+      <p class="hint">Official marks and attendance come from the college records. A study plan and assistant text are guidance, not official results.</p>
+      <div class="stats" id="overview-stats"></div>
+      <div id="overview-concerns"></div>
+      <div class="action-grid">
+        <button type="button" data-panel="results"><strong>Check academic results</strong><span>See internal marks, external marks, and the final grade for each subject.</span></button>
+        <button type="button" data-panel="results" data-scroll="#academic-report-section"><strong>View My Academic Report</strong><span>A summary of marks, attendance, and concerns you reported.</span></button>
+        <button type="button" data-panel="attendance"><strong>View attendance</strong><span>See which sessions were present or absent.</span></button>
+        <button type="button" data-panel="concerns"><strong>Report a difficult subject</strong><span>Tell the college what you want help with. This does not change a mark.</span></button>
+        <button type="button" data-panel="resources"><strong>Find learning resources</strong><span>Open books, websites, and videos stored for your subjects.</span></button>
+        <button type="button" data-panel="plan"><strong>Generate a study plan</strong><span>Review a suggestion, edit it, and save your own version.</span></button>
+        <button type="button" data-panel="suggestions"><strong>Get Revision Suggestions</strong><span>See which subjects and topics to revise, and why.</span></button>
+        <button type="button" data-panel="ask"><strong>Ask the AI learning assistant</strong><span>Ask about your records or about a subject you are learning.</span></button>
+      </div>
+    </section>
+    <section id="results" class="panel">
+      <h2>My Results</h2>
+      <p class="hint">These are your Semester 1 Computer Science results. A missing score stays incomplete. It is not treated as zero. Grades are calculated from the stored scores.</p>
+      <div id="results-table"></div>
+      <div id="academic-report-section" class="section-gap">
+        <h2>My Academic Report</h2>
+        <p>This summary uses the same official marks, attendance, and concerns shown in the portal. The assistant can explain them afterwards. It does not calculate the figures.</p>
+        <div id="report-official"></div>
+        <h3>AI explanation</h3>
+        <p class="hint">Choose this when you want the local assistant to explain the report in plain language.</p>
+        <div class="button-row"><button type="button" id="academic-report">Explain this report</button></div>
+        <article id="report-result" class="card result-block" aria-live="polite"></article>
+      </div>
+    </section>
+    <section id="attendance" class="panel">
+      <h2>My Attendance</h2>
+      <p class="hint">Each row is a session the college recorded. The percentage is the number of present sessions divided by the sessions on record.</p>
+      <div id="attendance-summary"></div>
+      <div id="attendance-table"></div>
+    </section>
+    <section id="concerns" class="panel">
+      <h2>My Concerns</h2>
+      <p class="hint">Use this form to report a topic you find difficult. Your report does not change a mark.</p>
+      <h3>Report a difficulty</h3>
+      <form id="concern-form">
+        <label for="concern-subject">Subject</label>
+        <select id="concern-subject" required></select>
+        <label for="concern-topic">Topic or chapter</label>
+        <input id="concern-topic" required maxlength="120">
+        <label for="concern-description">What is difficult?</label>
+        <textarea id="concern-description" required maxlength="1000"></textarea>
+        <label for="concern-concept">Concept you want explained</label>
+        <input id="concern-concept" required maxlength="300">
+        <div class="grid-2">
+          <div>
+            <label for="concern-help">Help requested</label>
+            <select id="concern-help">
+              <option value="explanation">Explanation</option>
+              <option value="practice">Practice</option>
+              <option value="resources">Resources</option>
+              <option value="study_plan">Study plan</option>
+            </select>
+          </div>
+          <div>
+            <label for="concern-format">Preferred format</label>
+            <select id="concern-format">
+              <option value="videos">Videos</option>
+              <option value="books">Books</option>
+              <option value="examples">Examples</option>
+              <option value="exercises">Exercises</option>
+            </select>
+          </div>
+        </div>
+        <label for="concern-priority">Priority</label>
+        <select id="concern-priority">
+          <option value="low">Low</option>
+          <option value="normal" selected>Normal</option>
+          <option value="high">High</option>
+        </select>
+        <div class="button-row"><button type="submit">Submit concern</button></div>
+      </form>
+      <h3>Concerns you have reported</h3>
+      <div id="concern-list"></div>
+    </section>
+    <section id="resources" class="panel">
+      <h2>Learning Resources</h2>
+      <p class="hint">These are books, websites, courses, and videos already stored for subjects that need support or that you have reported. A verified label means the link was checked.</p>
+      <div id="resource-list"></div>
+      <h3 class="section-gap">Video lessons</h3>
+      <p class="hint">A player appears only for a checked YouTube video. Other links stay as links.</p>
+      <div id="video-list"></div>
+    </section>
+    <section id="plan" class="panel">
+      <h2>Your Study Plan</h2>
+      <p>A study plan is a personal list of what to review. You can generate a suggestion from your results, change the wording, and save your own version.</p>
+      <p class="hint">The plan is editable guidance. It is not an official academic result, and opening this page does not change a saved plan.</p>
+      <p id="plan-meta"></p>
+      <p id="plan-dirty" class="message" role="status"></p>
+      <div id="plan-empty" class="card" hidden>
+        <p>No study plan yet. Generate a suggested plan based on your academic results and reported difficulties, then review and save it.</p>
+      </div>
+
+      <article class="task-card">
+        <h3>1. Generate a suggested study plan</h3>
+        <p>This suggestion uses your stored marks and the difficulties you reported. It appears in the box below so you can review it. It is not saved until you save it.</p>
+        <div class="button-row"><button type="button" id="generate-plan" class="secondary">Generate a suggested study plan</button></div>
+      </article>
+
+      <article class="task-card">
+        <h3>2. Edit or save my study plan</h3>
+        <p>Change the text to match how you want to study, then save. The success message appears only after the saved text is read back from the database.</p>
+        <label for="plan-text">Plan text</label>
+        <textarea id="plan-text" maxlength="8000"></textarea>
+        <div class="button-row"><button type="button" id="save-plan">Save my study plan</button></div>
+        <p id="plan-status" class="message" role="status"></p>
+      </article>
+
+      <article class="task-card">
+        <h3>3. Explain my study plan with AI</h3>
+        <p>The local assistant can clarify the plan in the box, explain difficult topics, and suggest how to approach each activity. The answer is guidance, not an official result.</p>
+        <div class="button-row"><button type="button" id="explain-plan" class="secondary">Explain my study plan</button></div>
+        <article id="plan-explanation" class="card result-block" aria-live="polite"></article>
+      </article>
+    </section>
+    <section id="suggestions" class="panel">
+      <h2>Revision Suggestions</h2>
+      <p>This recommends subjects and topics to revise from your stored marks and the difficulties you reported. It also lists learning resources already in the database.</p>
+      <p class="hint">Official marks stay as recorded. The assistant explains them and suggests activities. It does not decide a pass or fail.</p>
+      <div class="button-row"><button type="button" id="revision-suggestions">Get Revision Suggestions</button></div>
+      <article id="revision-result" class="card result-block" aria-live="polite"></article>
+    </section>
+    <section id="ask" class="panel">
+      <h2>Ask AI</h2>
+      <p>Ask the local learning assistant about your own records or about a subject you are studying. Questions about your marks, attendance, or results use only your stored records.</p>
+      <p class="hint">Choose an example or write your own question, then press Ask. You can ask a follow-up after the answer appears.</p>
+      <div class="example-questions" id="example-questions">
+        <button type="button" data-question="Explain my academic performance in simple terms.">Explain my academic performance in simple terms.</button>
+        <button type="button" data-question="Why should I focus more on Database Management Systems?">Why should I focus more on Database Management Systems?</button>
+        <button type="button" data-question="Explain an array index using a simple example.">Explain an array index using a simple example.</button>
+        <button type="button" data-question="Help me understand training data and test data.">Help me understand training data and test data.</button>
+        <button type="button" data-question="Create a revision plan for my difficult subjects.">Create a revision plan for my difficult subjects.</button>
+        <button type="button" data-question="Recommend learning resources for my reported concerns.">Recommend learning resources for my reported concerns.</button>
+      </div>
+      <label for="question">Your question</label>
+      <textarea id="question" maxlength="1000" placeholder="Ask about a subject or about your records"></textarea>
+      <div class="button-row"><button type="button" id="ask-button">Ask</button></div>
+      <p id="ask-status" class="message" role="status"></p>
+      <div id="ask-result" class="result-block" aria-live="polite"></div>
+    </section>
+    <section id="profile" class="panel">
+      <h2>Profile</h2>
+      <p class="hint">This is the name and email stored on your student account. Department and semester are the same for every student.</p>
+      <form id="profile-form">
+        <label for="profile-name">Full name</label>
+        <input id="profile-name" required maxlength="120">
+        <label for="profile-email">Email</label>
+        <input id="profile-email" type="email" required maxlength="254">
+        <p id="profile-programme" class="hint"></p>
+        <div class="button-row"><button type="submit">Save profile</button></div>
+      </form>
+    </section>
+  </main>
+  <script src="/static/auth.js"></script>
+  <script src="/static/student.js"></script>
+</body>
+</html>

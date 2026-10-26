@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student login · Student Management System</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="auth-layout single">
+    <section class="auth-card">
+      <p class="eyebrow"><a href="/">Student Management System</a></p>
+      <h1>Student login</h1>
+      <p class="hint">Sign in with your student email and password.</p>
+      <p id="service-status" class="status-pill">Checking services…</p>
+      <form id="login-form" data-portal="student">
+        <label for="login-email">Email</label>
+        <input id="login-email" name="email" type="email" autocomplete="username" required>
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        <div class="button-row"><button type="submit">Sign in</button></div>
+      </form>
+      <p id="login-message" class="message" role="status"></p>
+      <p class="hint">New here? <a href="/register">Create a student account</a>.</p>
+      <p class="admin-entry"><a href="/admin/login">Admin login</a></p>
+    </section>
+  </main>
+  <script src="/static/auth.js"></script>
+</body>
+</html>
